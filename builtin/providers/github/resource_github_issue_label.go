@@ -33,12 +33,16 @@ func resourceGithubIssueLabel() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"etag": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceGithubIssueLabelCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Organization).client
+	client := meta.(*Organization).Client()
 	r := d.Get("repository").(string)
 	n := d.Get("name").(string)
 	c := d.Get("color").(string)
@@ -57,10 +61,15 @@ func resourceGithubIssueLabelCreate(d *schema.ResourceData, meta interface{}) er
 }
 
 func resourceGithubIssueLabelRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Organization).client
+	client := meta.(*Organization).Client()
 	r, n := parseTwoPartID(d.Id())
 
-	githubLabel, _, err := client.Issues.GetLabel(meta.(*Organization).name, r, n)
+	client.Transport.etag = d.Get("etag").(string)
+	githubLabel, resp, err := client.Issues.GetLabel(meta.(*Organization).name, r, n)
+	if resp.StatusCode == 304 {
+		// no changes
+		return nil
+	}
 	if err != nil {
 		d.SetId("")
 		return nil
@@ -70,12 +79,13 @@ func resourceGithubIssueLabelRead(d *schema.ResourceData, meta interface{}) erro
 	d.Set("name", n)
 	d.Set("color", githubLabel.Color)
 	d.Set("url", githubLabel.URL)
+	d.Set("etag", resp.Header.Get("ETag"))
 
 	return nil
 }
 
 func resourceGithubIssueLabelUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Organization).client
+	client := meta.(*Organization).Client()
 	r := d.Get("repository").(string)
 	n := d.Get("name").(string)
 	c := d.Get("color").(string)
@@ -95,7 +105,7 @@ func resourceGithubIssueLabelUpdate(d *schema.ResourceData, meta interface{}) er
 }
 
 func resourceGithubIssueLabelDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Organization).client
+	client := meta.(*Organization).Client()
 	r := d.Get("repository").(string)
 	n := d.Get("name").(string)
 

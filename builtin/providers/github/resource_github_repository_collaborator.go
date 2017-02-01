@@ -38,7 +38,7 @@ func resourceGithubRepositoryCollaborator() *schema.Resource {
 }
 
 func resourceGithubRepositoryCollaboratorCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Organization).client
+	client := meta.(*Organization).Client()
 	u := d.Get("username").(string)
 	r := d.Get("repository").(string)
 	p := d.Get("permission").(string)
@@ -56,7 +56,7 @@ func resourceGithubRepositoryCollaboratorCreate(d *schema.ResourceData, meta int
 }
 
 func resourceGithubRepositoryCollaboratorRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Organization).client
+	client := meta.(*Organization).Client()
 	r, u := parseTwoPartID(d.Id())
 
 	isCollaborator, _, err := client.Repositories.IsCollaborator(meta.(*Organization).name, r, u)
@@ -93,7 +93,7 @@ func resourceGithubRepositoryCollaboratorRead(d *schema.ResourceData, meta inter
 }
 
 func resourceGithubRepositoryCollaboratorDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Organization).client
+	client := meta.(*Organization).Client()
 	u := d.Get("username").(string)
 	r := d.Get("repository").(string)
 
